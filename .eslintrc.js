@@ -6,20 +6,21 @@ module.exports = {
   },
   'extends': 'eslint:recommended',
   'parserOptions': {
-    'ecmaVersion': 12
+    'ecmaVersion': 13
   },
   'rules': {
     'indent': [
-      'error',
+      'warn',
       2
     ],
     'quotes': [
-      'error',
+      'warn',
       'single'
     ],
     'semi': [
-      'error',
+      'warn',
       'always'
-    ]
+    ],
+    'no-unused-vars': 'warn'
   }
 };
