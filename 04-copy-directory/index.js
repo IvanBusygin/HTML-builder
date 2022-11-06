@@ -1,43 +1,31 @@
 const path = require('path');
-const fs = require('fs');
+const P = require('fs/promises');
 
 const folder = path.join(__dirname, 'files');
+const folderCopy = path.join(__dirname, 'files-copy');
 
-fs.readdir(folder, (err, data) => {
-  const folderCopy = path.join(__dirname, 'files-copy');
-  fs.stat(folderCopy,  (err) => {
-    if (err) {
-      // console.log('Папка не найдена');
-      fs.mkdir(folderCopy, {recursive: true}, (err) => {
-        if (err) throw err;
-        // console.log('Папка создана!');
-      });
-      copyFile();
+(async () => {
+  try {
+    await P.rm(folderCopy, {recursive: true, force: true});
+
+    const arrFiles = await P.readdir(folder);
+
+    if (arrFiles.length !== 0) {
+      await P.mkdir(folderCopy);
+      for (const fileName of arrFiles) {
+        const copyPath = path.join(folderCopy, fileName);
+        const filePath = path.join(folder, fileName);
+        const isFile = (await P.stat(filePath)).isFile();
+        if (isFile) {
+          await P.copyFile(filePath, copyPath);
+          console.log(`File ${fileName} have been copied.`);
+        }
+      }
     } else {
-      // console.log('Папка найдена');
-      fs.readdir(folderCopy, (err, data) => {
-        data.forEach(f => {
-          const p = path.join(folderCopy, f);
-          fs.unlink(p, err => {
-            if (err) throw err;
-            // console.log(`Файл ${f} успешно удалён`);
-          });
-        });
-        copyFile();
-      });
+      console.log('The "files" folder is empty.');
     }
-  });
-  
-  function copyFile() {
-    data.forEach(f => {
-      const first = path.join(folder, f);
-      const copy = path.join(folderCopy, f);
-      fs.copyFile(first, copy, err => {
-        if (err) throw err;
-        console.log(`Файл ${f} успешно скопирован`);
-      });
-    });
-  }
-  // console.log(data);
-});
 
+  } catch (err) {
+    console.log(err);
+  }
+})();
