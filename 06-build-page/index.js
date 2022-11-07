@@ -15,11 +15,9 @@ const assetsCopy = path.join(dist, 'assets');
   try {
     await P.rm(dist, {recursive: true, force: true});
     await P.mkdir(dist);
-
     await makeHtml(template, templateComponents, htmlBundle);
     await makeCss(stylesFolder, cssBundle);
     await copyAssets(assetsFolder, assetsCopy);
-
   } catch (err) {
     console.log(err);
   }
@@ -27,10 +25,9 @@ const assetsCopy = path.join(dist, 'assets');
 
 async function makeHtml(template, components, bundle) {
   let fileTemplate = await P.readFile(template, 'utf-8');
-  const templateTags = getTemplateTags(fileTemplate);
-  const templates = await getTemplateContent(components);
-  for (const tag of templateTags) {
-    fileTemplate = fileTemplate.replace(`{{${tag}}}`, templates[tag]);
+  const tags = getTemplateTags(fileTemplate);
+  for (const tag of tags) {
+    fileTemplate = fileTemplate.replace(`{{${tag}}}`, await getContent(components, tag));
   }
   await P.writeFile(bundle, fileTemplate);
 }
@@ -39,7 +36,7 @@ function getTemplateTags(file) {
   const arrTags = [];
   let start = 0;
   let end = 0;
-  while (end >= 0 ) {
+  while (start >= 0 && end >= 0) {
     start = file.indexOf('{{', end);
     end = file.indexOf('}}', end + 2);
     if (start >= 0 && end > 0) {
@@ -50,20 +47,13 @@ function getTemplateTags(file) {
   return arrTags;
 }
 
-async function getTemplateContent(components){
-  const content = {};
-  const arrFiles = await P.readdir(components);
-  for (const fileName of arrFiles) {
-    const filePath = path.join(components, fileName);
-    const isFile = (await P.stat(filePath)).isFile();
-    const isHTML = path.parse(filePath).ext === '.html';
-    if (isFile && isHTML) {
-      const fileContent = await P.readFile(filePath, 'utf-8');
-      const name = path.parse(filePath).name;
-      content[name] = fileContent;
-    }
+async function getContent(components, tag){
+  try {
+    const filePath = path.join(components, `${tag}.html`);
+    return await P.readFile(filePath, 'utf-8');
+  } catch (err) {
+    console.log(`The template file ${tag} does not exist.`);
   }
-  return content;
 }
 
 async function makeCss(folder, bundle) {
